@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Event, hasValidCoordinates } from '../types/event';
+import { Coordinate } from '../services/routingService';
 import { getBrandColor, getBrandMark } from '../utils/brand';
+import { NAVIGATION_ZOOM, routeBearing } from '../utils/geo';
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -10,6 +12,11 @@ export type CampusMapProps = {
   events: Event[];
   selectedEvent: Event | null;
   onSelect: (event: Event) => void;
+  showUserLocation?: boolean;
+  routeCoordinates?: Coordinate[];
+  userLocation?: Coordinate | null;
+  followUser?: boolean;
+  onStopNavigation?: () => void;
 };
 
 const WEB_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_WEB_API_KEY;
@@ -48,11 +55,13 @@ function fallbackPosition(event: Event) {
   } as const;
 }
 
-export default function CampusMap({ events, selectedEvent, onSelect }: CampusMapProps) {
+export default function CampusMap({ events, selectedEvent, onSelect, routeCoordinates = [], userLocation = null, followUser = false }: CampusMapProps) {
   const containerRef = useRef<any>(null);
   const mapRef = useRef<any>(null);
   const markerLibRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const routeRef = useRef<any>(null);
+  const wasFollowing = useRef(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
 
@@ -111,6 +120,38 @@ export default function CampusMap({ events, selectedEvent, onSelect }: CampusMap
       mapRef.current.setZoom(17);
     }
   }, [events, onSelect, ready, selectedEvent]);
+
+  useEffect(() => {
+    if (!ready || !mapRef.current) return;
+    routeRef.current?.setMap(null);
+    if (routeCoordinates.length < 2) return;
+
+    const google = (globalThis as any).google;
+    routeRef.current = new google.maps.Polyline({
+      geodesic: true,
+      map: mapRef.current,
+      path: routeCoordinates.map(({ latitude, longitude }) => ({ lat: latitude, lng: longitude })),
+      strokeColor: '#2D6A4F',
+      strokeOpacity: 0.9,
+      strokeWeight: 5,
+    });
+    const bounds = new google.maps.LatLngBounds();
+    routeCoordinates.forEach(({ latitude, longitude }) => bounds.extend({ lat: latitude, lng: longitude }));
+    mapRef.current.fitBounds(bounds, { top: 80, right: 40, bottom: 340, left: 40 });
+  }, [ready, routeCoordinates]);
+
+  useEffect(() => {
+    if (ready && followUser && userLocation) {
+      const firstNavigationFrame = !wasFollowing.current;
+      wasFollowing.current = true;
+      mapRef.current?.panTo({ lat: userLocation.latitude, lng: userLocation.longitude });
+      if (firstNavigationFrame) mapRef.current?.setZoom(NAVIGATION_ZOOM);
+      mapRef.current?.setTilt(45);
+      if (routeCoordinates.length > 1) mapRef.current?.setHeading(routeBearing(userLocation, routeCoordinates));
+    } else if (!followUser) {
+      wasFollowing.current = false;
+    }
+  }, [followUser, ready, routeCoordinates, userLocation]);
 
   if (!WEB_API_KEY || error) {
     return (

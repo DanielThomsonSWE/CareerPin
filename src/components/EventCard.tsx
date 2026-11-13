@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatDate, formatTimeRange } from '../utils/date';
 import { Event } from '../types/event';
+import { useAppTheme } from '../utils/theme';
 
 type EventCardProps = {
   event: Event;
@@ -9,27 +10,29 @@ type EventCardProps = {
 };
 
 export function EventCard({ event, onPress }: EventCardProps) {
+  const { colors } = useAppTheme();
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${event.company}: ${event.title}`}
       onPress={() => onPress(event)}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && styles.pressed]}
     >
-      <View style={styles.dateColumn}>
-        <Text style={styles.dateMonth}>{formatDate(event.startTime).split(' ')[1]}</Text>
-        <Text style={styles.dateDay}>{formatDate(event.startTime).split(' ')[2]}</Text>
+      <View style={[styles.dateColumn, { backgroundColor: colors.accentSoft }]}>
+        <Text style={[styles.dateMonth, { color: colors.accent }]}>{formatDate(event.startTime).split(' ')[1]}</Text>
+        <Text style={[styles.dateDay, { color: colors.text }]}>{formatDate(event.startTime).split(' ')[2]}</Text>
       </View>
       <View style={styles.content}>
         <View style={styles.rowBetween}>
-          <Text style={styles.company}>{event.company}</Text>
-          <Text style={styles.source}>{event.source}</Text>
+          <Text style={[styles.company, { color: colors.accent }]}>{event.company}</Text>
+          <Text style={[styles.source, { color: colors.textMuted }]}>{event.source}</Text>
         </View>
-        <Text style={styles.title} numberOfLines={2}>{event.title}</Text>
-        <Text style={styles.meta}>{formatTimeRange(event.startTime, event.endTime)}</Text>
-        <Text style={styles.location} numberOfLines={1}>⌖ {event.locationName}</Text>
+        <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{event.title}</Text>
+        <Text style={[styles.meta, { color: colors.textSecondary }]}>{formatTimeRange(event.startTime, event.endTime)}</Text>
+        <Text style={[styles.location, { color: colors.textMuted }]} numberOfLines={1}>⌖ {event.locationName}</Text>
       </View>
-      <Text style={styles.chevron}>›</Text>
+      <Text style={[styles.chevron, { color: colors.textMuted }]}>›</Text>
     </Pressable>
   );
 }

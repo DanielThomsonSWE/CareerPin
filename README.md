@@ -28,15 +28,19 @@ Expo Go does not need additional map configuration. If you create a native devel
 Do not commit API keys. Copy `.env.example` to `.env`, fill in the keys locally, and export them before generating a native build:
 
 ```bash
+cp .env.example .env
 export GOOGLE_MAPS_ANDROID_API_KEY="your_android_key"
 export GOOGLE_MAPS_IOS_API_KEY="your_ios_key"
 export EXPO_PUBLIC_GOOGLE_MAPS_WEB_API_KEY="your_web_key"
+export EXPO_PUBLIC_GOOGLE_ROUTES_API_KEY="your_routes_key"
 npx expo prebuild
 npx expo run:android
 # or: npx expo run:ios
 ```
 
 `app.config.js` reads those environment variables and passes them to the `react-native-maps` config plugin. The app intentionally leaves the `provider` prop unset so Expo Go and native builds use the platform's default map provider. If the app later switches to Google as an explicit provider, add `provider={PROVIDER_GOOGLE}` in `src/app/index.tsx` and rebuild the native binary.
+
+ETA requires the Google Cloud **Routes API** to be enabled with billing. `EXPO_PUBLIC_GOOGLE_ROUTES_API_KEY` is separate from the native map SDK keys. After changing `.env`, restart Metro with `npx expo start --clear` so the new public variable is bundled.
 
 ## Project structure
 
@@ -64,7 +68,8 @@ src/
 
 - Events are sorted chronologically.
 - Search filters by company name.
-- The Upcoming control filters out events that have started.
+- Industry and major filters can be combined.
+- The app follows the device color theme by default and includes a Light/Dark toggle.
 - Only in-person events with finite latitude/longitude values render pins.
 - Selecting a list event switches to the map and animates to its marker.
 - Selecting a marker opens event details and its registration link.

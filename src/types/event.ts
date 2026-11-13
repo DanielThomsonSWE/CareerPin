@@ -11,6 +11,9 @@ export type Event = {
   source: string;
   sourceUrl?: string;
   logoUrl?: string;
+  tags?: string[];
+  industries?: string[];
+  majors?: string[];
   isVirtual: boolean;
 };
 
